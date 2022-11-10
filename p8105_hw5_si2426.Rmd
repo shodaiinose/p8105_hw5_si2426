@@ -39,15 +39,16 @@ homicide_sum = homicide_summary %>% mutate(
         homicide_summary$unsolved_homicides,
         homicide_summary$total_homicide, prop.test), 
     results = map(prop_test, broom::tidy)
-    )
-
-homicide_sum = homicide_sum %>% unnest(results) %>% select(-c(prop_test, parameter, method, alternative))
+    ) %>% unnest(results) %>% select(-c(prop_test, parameter, method, alternative)) %>% mutate(city_state = fct_reorder(city_state, estimate))
 
 ggplot(homicide_sum, aes(x = city_state, y = estimate)) + 
-  geom_point() + geom_errorbar(aes(ymin = conf.low, ymax = conf.high)) +
-  labs(x = "City, State", y = "Proportion of Unsolved Homicides")
+  geom_point() + 
+  geom_errorbar(aes(ymin = conf.low, ymax = conf.high)) +
+  labs(x = "City, State", y = "Proportion of Unsolved Homicides") +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
 ```
 
+From the graph above, we note that Tulsa, Alabama has the lowest estimated proportion of unsolved homicides at 0 while Chicago, Illinois has the higheest estimated proportion proportion of unsolved homicides. It is important to note that Tulsa, Alabama only has `r nrow(homicide_df %>% filter(city_state == "Tulsa, AL"))` homicide, which was solved, meaning it has no unsolved homicides in this dataset.
 
 ## Problem 3
 ```{r}

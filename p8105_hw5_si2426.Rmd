@@ -8,7 +8,7 @@ date: "2022-11-03"
 library(tidyverse)
 library(ggplot2)
 
-set.seed(1)
+set.seed(1919)
 ```
 
 ## Problem 2
@@ -18,28 +18,42 @@ homicide_df = read.csv("./data/homicide-data.csv")
 The raw data contains `r nrow(homicide_df)` observations and `r ncol(homicide_df)` variables. The key variables are uid, reported date, victim last name, victim first name, victim race, victim age, victim sex, city, state, latitude, longitude, and disposition. The dataset contains information from `r homicide_df %>% distinct(state) %>% nrow()` distinct states.
 
 ```{r}
-homicide_df = homicide_df %>% mutate(city_state = paste(city, state, sep = ", "))
+homicide_df = homicide_df %>% 
+  mutate(city_state = paste(city, state, sep = ", "))
 
-homicide_summary = homicide_df %>% group_by(city_state) %>% summarize(total_homicide = n(), unsolved_homicides = sum(disposition == "Closed without arrest" | disposition == "Open/No arrest"))
+homicide_summary = homicide_df %>% 
+  group_by(city_state) %>% 
+  summarize(total_homicide = n(), unsolved_homicides = sum(disposition == "Closed without arrest" | disposition == "Open/No arrest"))
 
-head(homicide_summary, 5) %>% knitr::kable()
+head(homicide_summary, 5) %>% 
+  knitr::kable()
 ```
 
 ```{r}
-baltimoreptest = prop.test(homicide_summary %>% filter(city_state == "Baltimore, MD") %>% pull(unsolved_homicides), homicide_summary %>% filter(city_state == "Baltimore, MD") %>% pull(total_homicide))
+baltimoreptest = 
+  prop.test(homicide_summary %>% 
+                             filter(city_state == "Baltimore, MD") %>%
+                             pull(unsolved_homicides), homicide_summary %>%
+                             filter(city_state == "Baltimore, MD") %>%
+                             pull(total_homicide))
 
-baltimoreptest = baltimoreptest %>% broom::tidy()
+baltimoreptest = baltimoreptest %>% 
+  broom::tidy()
 ```
 
 The estimated proportion is approximately `r round(baltimoreptest %>% select(estimate), 2)` and the 95% confidence interval is (`r round(baltimoreptest %>% select(conf.low, conf.high), 2)`).
 
 ```{r}
-homicide_sum = homicide_summary %>% mutate(
+homicide_sum = homicide_summary %>% 
+  mutate(
     prop_test = map2(
         homicide_summary$unsolved_homicides,
         homicide_summary$total_homicide, prop.test), 
     results = map(prop_test, broom::tidy)
-    ) %>% unnest(results) %>% select(-c(prop_test, parameter, method, alternative)) %>% mutate(city_state = fct_reorder(city_state, estimate))
+    ) %>% 
+  unnest(results) %>% 
+  select(-c(prop_test, parameter, method, alternative)) %>%
+  mutate(city_state = fct_reorder(city_state, estimate))
 
 ggplot(homicide_sum, aes(x = city_state, y = estimate)) + 
   geom_point() + 
@@ -51,13 +65,15 @@ ggplot(homicide_sum, aes(x = city_state, y = estimate)) +
 From the graph above, we note that Tulsa, Alabama has the lowest estimated proportion of unsolved homicides at 0 while Chicago, Illinois has the higheest estimated proportion proportion of unsolved homicides. It is important to note that Tulsa, Alabama only has `r nrow(homicide_df %>% filter(city_state == "Tulsa, AL"))` homicide, which was solved, meaning it has no unsolved homicides in this dataset.
 
 ## Problem 3
+
+#### $\mu$ = 0
 ```{r}
-sim = function(n, mu = 0, sigma = 5) {
-  
+sim = function(n = 30, mu, sigma = 5) 
+  {
   sim_data = tibble(
     x = rnorm(n = n, mean = mu, sd = sigma),
   )
-}
+  }
 
 mu_0_df = 
   expand_grid(
@@ -65,15 +81,61 @@ mu_0_df =
     iter = 1:5000
   ) %>% 
   mutate(
-    estimate_df = map(sample_size, sim)
-  ) %>% group_by(iter) %>%
+    estimate_df = map(sample_size, ~sim(mu = 0))
+  ) %>% 
+  group_by(iter) %>%
   mutate(
     mean = map_dbl(.x = estimate_df, ~mean(.x$x)),
     t_test = map(.x = estimate_df, ~t.test(.x$x)),
     results = map(t_test, broom::tidy)
     ) 
 
-mu_0_df = mu_0_df %>% unnest(results) %>% dplyr::select(-c("estimate_df", "t_test", "parameter", "method", "alternative"))
+clean_t_test = function(x) 
+  {
+   x %>% unnest(results) %>% 
+  dplyr::select(
+    -c("estimate_df", "t_test", "parameter", "method", "alternative", "estimate")) %>%
+    mutate(null_rejected = as.logical(ifelse(p.value > 0.05, "FALSE", "TRUE")))
+  }
+
+mu_0_df = mu_0_df %>% clean_t_test
+
+head(mu_0_df, 5)
 ```
 
+#### Repeating Steps for Different $\mu$
+```{r}
+combined_mu_df = vector("list", 6)
+
+bind = for(i in 1:6)
+{
+  combined_mu_df[[i]] = (expand_grid(
+    sample_size = 30,
+    iter = 1:5000
+  ) %>% 
+  mutate(
+    estimate_df = map(sample_size, ~sim(mu = i))
+  ) %>% 
+  group_by(iter) %>%
+  mutate(
+    mu = i,
+    mean = map_dbl(.x = estimate_df, ~mean(.x$x)),
+    t_test = map(.x = estimate_df, ~t.test(.x$x)),
+    results = map(t_test, broom::tidy)
+    ) %>% 
+    clean_t_test)
+}
+
+combined_mu_df = combined_mu_df %>% do.call(rbind, .)
+```
+
+```{r}
+#combined_mu_df %>% 
+#  group_by(mu, null_rejected) %>% 
+#  summarize(rejected_count = n()) %>%
+#  mutate(prop_rejected = rejected_count/sum(n))
+
+#ggplot(combined_mu_df, aes(x = mu, y = estimate)) + 
+#  geom_bar
+```
 

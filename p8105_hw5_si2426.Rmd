@@ -6,6 +6,7 @@ date: "2022-11-03"
 
 ```{r, include = FALSE}
 library(tidyverse)
+library(ggplot2)
 
 set.seed(1)
 ```
@@ -41,6 +42,10 @@ homicide_sum = homicide_summary %>% mutate(
     )
 
 homicide_sum = homicide_sum %>% unnest(results) %>% select(-c(prop_test, parameter, method, alternative))
+
+ggplot(homicide_sum, aes(x = city_state, y = estimate)) + 
+  geom_point() + geom_errorbar(aes(ymin = conf.low, ymax = conf.high)) +
+  labs(x = "City, State", y = "Proportion of Unsolved Homicides")
 ```
 
 

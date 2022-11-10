@@ -1,0 +1,76 @@
+---
+title: "Homework 5"
+output: github_document
+date: "2022-11-03"
+---
+
+```{r, include = FALSE}
+library(tidyverse)
+
+set.seed(1)
+```
+
+## Problem 2
+```{r}
+homicide_df = read.csv("./data/homicide-data.csv")
+```
+The raw data contains `r nrow(homicide_df)` observations and `r ncol(homicide_df)` variables. The key variables are uid, reported date, victim last name, victim first name, victim race, victim age, victim sex, city, state, latitude, longitude, and disposition. The dataset contains information from `r homicide_df %>% distinct(state) %>% nrow()` distinct states.
+
+```{r}
+homicide_df = homicide_df %>% mutate(city_state = paste(city, state, sep = ", "))
+
+homicide_summary = homicide_df %>% group_by(city_state) %>% summarize(total_homicide = n(), unsolved_homicides = sum(disposition == "Closed without arrest" | disposition == "Open/No arrest"))
+
+homicide_summary
+```
+
+```{r}
+baltimoreptest = prop.test(homicide_summary %>% filter(city_state == "Baltimore, MD") %>% pull(unsolved_homicides), homicide_summary %>% filter(city_state == "Baltimore, MD") %>% pull(total_homicide))
+
+baltimoreptest = baltimoreptest %>% broom::tidy()
+```
+
+The estimated proportion is `r baltimoreptest %>% select(estimate)` and the 95% confidence interval is `rbaltimoreptest %>% select(conf.low, conf.high)`
+```
+
+```{r}
+#homicide_sum = homicide_summary %>% mutate(prop_test = map2(homicide_summary$unsolved_homicides, homicide_summary$total_homicide, prop.test))
+
+#pmap(homicide_sum, broom::tidy())
+```
+
+
+## Problem 3
+```{r}
+sim = function(n = 30, mu = 0, sigma = 5) {
+  
+  sim_data = tibble(
+    x = rnorm(n = n, mean = mu, sd = sigma),
+  )
+}
+
+sim_mean_sd = function(n, mu = 0, sigma = 5) {
+  
+  sim_data = tibble(
+    x = rnorm(n, mean = mu, sd = sigma),
+  )
+  
+  sim_data %>% 
+    summarize(
+      mu_hat = mean(x),
+      sigma_hat = sd(x)
+    )
+}
+
+mu_0_df = 
+  expand_grid(
+    sample_size = 30,
+    iter = 1:5000
+  ) %>% 
+  mutate(
+    estimate_df = map(sample_size, sim)
+  ) %>% 
+  unnest(estimate_df) %>% group_by(iter) %>% summarize(mu = mean(x))
+```
+
+

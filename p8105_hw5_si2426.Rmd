@@ -21,7 +21,7 @@ homicide_df = homicide_df %>% mutate(city_state = paste(city, state, sep = ", ")
 
 homicide_summary = homicide_df %>% group_by(city_state) %>% summarize(total_homicide = n(), unsolved_homicides = sum(disposition == "Closed without arrest" | disposition == "Open/No arrest"))
 
-homicide_summary
+head(homicide_summary, 5) %>% knitr::kable()
 ```
 
 ```{r}
@@ -30,13 +30,13 @@ baltimoreptest = prop.test(homicide_summary %>% filter(city_state == "Baltimore,
 baltimoreptest = baltimoreptest %>% broom::tidy()
 ```
 
-The estimated proportion is `r baltimoreptest %>% select(estimate)` and the 95% confidence interval is `rbaltimoreptest %>% select(conf.low, conf.high)`
+The estimated proportion is approximately `r round(baltimoreptest %>% select(estimate), 2)` and the 95% confidence interval is (`r round(baltimoreptest %>% select(conf.low, conf.high), 2)`).
 ```
 
 ```{r}
-#homicide_sum = homicide_summary %>% mutate(prop_test = map2(homicide_summary$unsolved_homicides, homicide_summary$total_homicide, prop.test))
+homicide_sum = homicide_summary %>% mutate(prop_test = map2(homicide_summary$unsolved_homicides, homicide_summary$total_homicide, prop.test))
 
-#pmap(homicide_sum, broom::tidy())
+#pmap(homicide_sum$prop_test, broom::tidy())
 ```
 
 

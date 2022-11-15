@@ -13,9 +13,13 @@ set.seed(1919)
 
 ## Problem 2
 ```{r}
-homicide_df = read.csv("./data/homicide-data.csv")
+homicide_df = read.csv("./data/homicide-data.csv") %>% 
+transform(
+  state,
+  state = replace(state, (city == "Tulsa" & state == "AL"), "OK")
+)
 ```
-The raw data contains `r nrow(homicide_df)` observations and `r ncol(homicide_df)` variables. The key variables are uid, reported date, victim last name, victim first name, victim race, victim age, victim sex, city, state, latitude, longitude, and disposition. The dataset contains information from `r homicide_df %>% distinct(state) %>% nrow()` distinct states.
+The raw data contains `r nrow(homicide_df)` observations and `r ncol(homicide_df)` variables. The key variables are uid, reported date, victim last name, victim first name, victim race, victim age, victim sex, city, state, latitude, longitude, and disposition. The dataset contains information from `r homicide_df %>% distinct(state) %>% nrow()` distinct states. The data contains a likely typo of a city named Tulsa, Alabama. As there are no cities or towns in Alabama with the name Tulsa, this error has been corrected to Tulsa, Oklahoma.
 
 ```{r}
 homicide_df = homicide_df %>% 
@@ -62,7 +66,7 @@ ggplot(homicide_sum, aes(x = city_state, y = estimate)) +
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
 ```
 
-From the graph above, we note that Tulsa, Alabama has the lowest estimated proportion of unsolved homicides at 0 while Chicago, Illinois has the higheest estimated proportion proportion of unsolved homicides. It is important to note that Tulsa, Alabama only has `r nrow(homicide_df %>% filter(city_state == "Tulsa, AL"))` homicide, which was solved, meaning it has no unsolved homicides in this dataset.
+From the graph above, we note that Richmond, Virginia has the lowest estimated proportion of unsolved homicides at 0 while Chicago, Illinois has the higheest estimated proportion proportion of unsolved homicides.
 
 ## Problem 3
 

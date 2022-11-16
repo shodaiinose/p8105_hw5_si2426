@@ -19,7 +19,7 @@ transform(
   state = replace(state, (city == "Tulsa" & state == "AL"), "OK")
 )
 ```
-The raw data contains `r nrow(homicide_df)` observations and `r ncol(homicide_df)` variables. The key variables are uid, reported date, victim last name, victim first name, victim race, victim age, victim sex, city, state, latitude, longitude, and disposition. The dataset contains information from `r homicide_df %>% distinct(state) %>% nrow()` distinct states. The data contains a likely typo of a city named Tulsa, Alabama. As there are no cities or towns in Alabama with the name Tulsa, this error has been corrected to Tulsa, Oklahoma.
+The raw data contains `r nrow(homicide_df)` observations and `r ncol(homicide_df)` variables. The key variables are uid, reported date, victim last name, victim first name, victim race, victim age, victim sex, city, state, latitude, longitude, and disposition. The dataset contains information from `r homicide_df %>% distinct(state) %>% nrow()` distinct states. The original data contains a likely typo of a city named Tulsa, Alabama. As there are no cities or towns in Alabama with the name Tulsa, this error has been corrected to Tulsa, Oklahoma.
 
 ```{r}
 homicide_df = homicide_df %>% 
@@ -66,13 +66,13 @@ ggplot(homicide_sum, aes(x = city_state, y = estimate)) +
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
 ```
 
-From the graph above, we note that Richmond, Virginia has the lowest estimated proportion of unsolved homicides at 0 while Chicago, Illinois has the higheest estimated proportion proportion of unsolved homicides.
+From the graph above, we note that Richmond, Virginia has the lowest estimated proportion of unsolved homicides while Chicago, Illinois has the highest estimated proportion proportion of unsolved homicides. It should be noted that the confidence interval for the proportion of unsolved homicides in Chicago is much higher than the confidence intervals in other cities. Since the confidence interval for Chicago does not overlap with any other confidence intervals, it indicates a significant difference between the proportion of unsolved homicides in Chicago and all other cities. 
 
 ## Problem 3
 
 #### Simulating $\mu$ = 0
 ```{r}
-sim = function(n = 30, mu, sigma = 5) 
+simulation = function(n = 30, mu, sigma = 5) 
   {
   sim_data = tibble(
     x = rnorm(n = n, mean = mu, sd = sigma),
@@ -85,7 +85,7 @@ mu_0_df =
     iter = 1:5000
   ) %>% 
   mutate(
-    estimate_df = map(sample_size, ~sim(mu = 0))
+    estimate_df = map(sample_size, ~simulation(mu = 0))
   ) %>% 
   group_by(iter) %>%
   mutate(
@@ -118,7 +118,7 @@ bind = for(i in 1:6)
     iter = 1:100
   ) %>% 
   mutate(
-    estimate_df = map(sample_size, ~sim(mu = i))
+    estimate_df = map(sample_size, ~simulation(mu = i))
   ) %>% 
   group_by(iter) %>%
   mutate(
@@ -145,8 +145,7 @@ ggplot(null_reject_df, aes(x = mu, y = null_rejected_freq)) +
   theme(text = element_text(size = 10))
 ```
 
-The plot above indicates that the power of the test increases with the effect size. 
-
+The plot above indicates that the power of the test increases with the effect size. For smaller effect sizes, the power quickly increases with an increase in effect size. However, the relationship between effect size and power slows as power approaches a value of 1. 
 ```{r}
 mean_estimate_df = combined_mu_df %>% 
   group_by(mu) %>%
@@ -174,4 +173,4 @@ ggplot(mean_estimate_df, aes(x = mu, y = mean_estimate)) +
 
 ```
 
-The red dots represent the average estimated values of $\hat{\mu}$ in samples for which the null was rejected. The black dots represent the average estimated values of $\hat{\mu}$ for all samples. The black dots are much more accurate to the true value of $\mu$. This is not surprising, as the samples where the null was rejected indicate that the estimated value of $\mu$ was very different from the true value.  
+The red marks represent the average estimated values of $\hat{\mu}$ in samples for which the null was rejected. The black dots represent the average estimated values of $\hat{\mu}$ for all samples. The black dots are much more accurate to the true value of $\mu$. This is not surprising, as the samples where the null was rejected indicate that the estimated value of $\mu$ was very different from the true value.  

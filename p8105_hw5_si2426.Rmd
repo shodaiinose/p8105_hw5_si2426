@@ -16,7 +16,7 @@ set.seed(1919)
 
 #### Loading Data and Creating a Summary
 
-```{r}
+```{r, warning = FALSE}
 homicide_df = read.csv("./data/homicide-data.csv") %>% 
 transform(
   state,
@@ -54,10 +54,13 @@ baltimoreptest =
 baltimoreptest = baltimoreptest %>% 
   broom::tidy()
 
-baltimoreptest_estimate = round(baltimoreptest %>% pull(estimate), 2)
+baltimoreptest_estimate = round(baltimoreptest %>% 
+                                  pull(estimate), 2)
 
-baltimoreptest_low = round(baltimoreptest %>% pull(conf.low), 2)
-baltimoreptest_high = round(baltimoreptest %>% pull(conf.high), 2)
+baltimoreptest_low = round(baltimoreptest %>% 
+                             pull(conf.low), 2)
+baltimoreptest_high = round(baltimoreptest %>% 
+                              pull(conf.high), 2)
 ```
 
 The estimated proportion is approximately `r baltimoreptest_estimate` and the 95% confidence interval is (`r baltimoreptest_low`, `r baltimoreptest_high`).
@@ -76,7 +79,8 @@ homicide_sum = homicide_summary %>%
   select(-c(prop_test, parameter, method, alternative)) %>%
   mutate(city_state = fct_reorder(city_state, estimate))
 
-head(homicide_sum)
+head(homicide_sum) %>% 
+  knitr::kable()
 ```
 #### Plotting the Proportions of Unsolved Homicides
 
@@ -94,9 +98,9 @@ From the graph above, we note that Richmond, Virginia has the lowest estimated p
 
 #### Simulating $\mu$ = 0
 ```{r}
-simulation = function(n = 30, mu, sigma = 5) 
+create_simulation = function(n = 30, mu, sigma = 5) 
   {
-  sim_data = tibble(
+  simulation_results = tibble(
     x = rnorm(n = n, mean = mu, sd = sigma),
   )
   }
@@ -107,7 +111,7 @@ mu_0_df =
     iter = 1:5000
   ) %>% 
   mutate(
-    estimate_df = map(sample_size, ~simulation(mu = 0))
+    estimate_df = map(sample_size, ~create_simulation(mu = 0))
   ) %>% 
   group_by(iter) %>%
   mutate(
@@ -126,21 +130,22 @@ clean_t_test = function(x)
 
 mu_0_df = mu_0_df %>% clean_t_test
 
-head(mu_0_df, 5)
+head(mu_0_df, 5) %>% 
+  knitr::kable()
 ```
 
 #### Simulating Different Values of $\mu$
 ```{r}
 combined_mu_df = vector("list", 6)
 
-bind = for(i in 1:6)
+for(i in 1:6)
 {
   combined_mu_df[[i]] = (expand_grid(
     sample_size = 30,
-    iter = 1:100
+    iter = 1:5000
   ) %>% 
   mutate(
-    estimate_df = map(sample_size, ~simulation(mu = i))
+    estimate_df = map(sample_size, ~create_simulation(mu = i))
   ) %>% 
   group_by(iter) %>%
   mutate(
@@ -153,6 +158,9 @@ bind = for(i in 1:6)
 }
 
 combined_mu_df = combined_mu_df %>% do.call(rbind, .)
+
+head(combined_mu_df) %>% 
+  knitr::kable()
 ```
 
 #### Proportion of Times Null Rejected
